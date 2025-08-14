@@ -9,14 +9,14 @@ services:
       dockerfile: docker/Dockerfile.local
     environment:
       - ENVIRONMENT=local
-      - POSTGRES_HOST=${DB_SERVICE_NAME:-db}
+      - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     depends_on:
-      - ${DB_SERVICE_NAME:-db}
+      - db
       - redis
     env_file:
       - .envs/.env.local
@@ -24,7 +24,7 @@ services:
       - app_network
 
   # Database (PostgreSQL)
-  ${DB_SERVICE_NAME:-db}:
+  db:
     image: postgres:15
     container_name: ${COMPOSE_PROJECT_NAME:-django_local}_postgresql
     restart: always
@@ -69,7 +69,7 @@ services:
     depends_on:
       - redis
       - backend
-      - ${DB_SERVICE_NAME:-db}
+      - db
     env_file:
       - .envs/.env.local
     networks:
@@ -85,7 +85,7 @@ services:
     depends_on:
       - redis
       - backend
-      - ${DB_SERVICE_NAME:-db}
+      - db
     env_file:
       - .envs/.env.local
     networks:

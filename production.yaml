@@ -8,7 +8,7 @@ services:
     command: >
       sh -c "
         echo 'Esperando que PostgreSQL esté listo...' &&
-        while ! nc -z ${DB_SERVICE_NAME:-db} 5432; do
+        while ! nc -z db 5432; do
           sleep 1
         done &&
         echo 'PostgreSQL está listo!' &&
@@ -23,7 +23,7 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      ${DB_SERVICE_NAME:-db}:
+      db:
         condition: service_healthy
       redis:
         condition: service_started
@@ -43,7 +43,7 @@ services:
       - "traefik.http.routers.microservice-ws.service=microservice"
 
   # Database (PostgreSQL)
-  ${DB_SERVICE_NAME:-db}:
+  db:
     image: postgres:15
     container_name: ${COMPOSE_PROJECT_NAME:-django}-postgresql
     restart: always
