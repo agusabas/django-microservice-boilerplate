@@ -1,0 +1,82 @@
+# Git y control de versiones
+.git
+.gitignore
+.gitattributes
+
+# Datos de base de datos y archivos temporales
+.dbdata
+dbdata/
+*.db
+*.sqlite3
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Archivos de pruebas y coverage
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.pytest_cache/
+.hypothesis/
+
+# Archivos de logs
+*.log
+logs/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Archivos de documentación
+*.md
+docs/
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de desarrollo local
+local.yaml
+qa.yaml
+.envs/.env.local*
+.envs/.env.qa*
+
+# Node modules (si los hay)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos temporales
+tmp/
+temp/
+*.tmp
+
+# Archivos de media y static (se generan en runtime)
+media/
+static/
+staticfiles/
+
+# Archivos de Docker
+Dockerfile*
+docker-compose*.yml
+docker-compose*.yaml
+*.yaml

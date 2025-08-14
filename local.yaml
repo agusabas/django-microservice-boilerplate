@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Django App
+  backend:
+    container_name: ${COMPOSE_PROJECT_NAME:-django_local}_microservice
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile.local
+    environment:
+      - ENVIRONMENT=local
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .envs/.env.local
+    networks:
+      - app_network
+
+  # Database (PostgreSQL)
+  db:
+    image: postgres:15
+    container_name: ${COMPOSE_PROJECT_NAME:-django_local}_postgresql
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data
+    env_file:
+      - .envs/.env.local
+    healthcheck:
+       test: ["CMD-SHELL", "pg_isready -U postgres"]
+       interval: 5s
+       timeout: 5s
+       retries: 5
+    networks:
+      - app_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-django_local}_redis
+    ports:
+      - "6379:6379"
+    env_file:
+      - .envs/.env.local
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+      
+  celery_worker:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile.local
+    command: celery -A core worker -l DEBUG -Q default --hostname=worker1@%h
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - backend
+      - db
+    env_file:
+      - .envs/.env.local
+    networks:
+      - app_network
+
+  celery_beat:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile.local
+    command: celery -A core beat -l debug
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - backend
+      - db
+    env_file:
+      - .envs/.env.local
+    networks:
+      - app_network
+
+volumes:
+  postgres_data_local:
+
+networks:
+  app_network:
+    driver: bridge 

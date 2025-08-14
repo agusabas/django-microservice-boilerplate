@@ -1,0 +1,131 @@
+services:
+  # Django App
+  backend:
+    container_name: ${COMPOSE_PROJECT_NAME:-django}-microservice
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.production
+    command: >
+      sh -c "
+        echo 'Esperando que PostgreSQL esté listo...' &&
+        while ! nc -z db 5432; do
+          sleep 1
+        done &&
+        echo 'PostgreSQL está listo!' &&
+        python manage.py migrate &&
+        python manage.py migrate django_celery_beat &&
+        python manage.py collectstatic --noinput &&
+        daphne -b 0.0.0.0 -p 8000 --proxy-headers core.asgi:application"
+    volumes:
+      - .:/app
+      - ./static:/app/static
+      - ./media:/app/media
+    ports:
+      - 8000:8000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .envs/.env.production
+    networks:
+      - traefik
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.microservice.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.microservice.entrypoints=web"
+      - "traefik.http.services.microservice.loadbalancer.server.port=8000"
+      # WebSocket configuración
+      - "traefik.http.routers.microservice-ws.rule=Host(`${DOMAIN}`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.microservice-ws.entrypoints=web"
+      - "traefik.http.routers.microservice-ws.service=microservice"
+
+  # Database (PostgreSQL)
+  db:
+    image: postgres:15
+    container_name: ${COMPOSE_PROJECT_NAME:-django}-postgresql
+    restart: always
+    env_file:
+      - .envs/.env.production
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data_production:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - traefik
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-django}-redis
+    ports:
+      - 6379:6379
+    networks:
+      - traefik
+      # - monitoring_network
+    restart: always
+    env_file:
+      - .envs/.env.production
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.production
+    command: celery -A core worker -l INFO -Q default --hostname=worker1@%h
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - traefik
+      # - monitoring_network
+    restart: always
+    env_file:
+      - .envs/.env.production
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.production
+    command: celery -A core beat -l info
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - traefik
+    restart: always
+    env_file:
+      - .envs/.env.production
+    labels:
+      - "traefik.enable=true"
+      # Optional: Flower monitoring
+      # - "traefik.http.routers.flower.rule=Host(`flower.${DOMAIN}`)"
+      # - "traefik.http.routers.flower.entrypoints=web"
+      # - "traefik.http.services.flower.loadbalancer.server.port=5555"
+
+volumes:
+  postgres_data_production:
+
+networks:
+  traefik:
+    external: true

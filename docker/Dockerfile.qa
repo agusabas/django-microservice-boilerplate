@@ -1,0 +1,39 @@
+FROM python:3.9-slim
+
+ENV PYTHONUNBUFFERED 1
+ENV ENVIRONMENT qa
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    netcat-traditional \
+    gcc \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar dependencias de Python
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install git+https://github.com/agusabas/auth_sdk
+
+# Copiar c�digo
+COPY . /app
+
+# Copiar y dar permisos al script de entrada
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Crear directorio para logs y dar permisos
+RUN mkdir -p /app/logs
+
+# Usuario no root para seguridad
+RUN groupadd -r app && useradd -r -g app app
+RUN chown -R app:app /app
+RUN chmod -R 755 /app/logs
+USER app
+
+# Usar el script como entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Comando por defecto
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8006", "--proxy-headers", "core.asgi:application"]
