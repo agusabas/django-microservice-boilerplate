@@ -26,6 +26,9 @@ whitenoise==6.7.0
 # Autenticación y seguridad
 pyJWT==2.9.0
 
+# API Response formatting
+djangorestframework-api-response==0.1.0
+
 # Celery para tareas asíncronas
 celery[redis]>=5.3.0
 celery==5.3.6
