@@ -24,6 +24,7 @@ gunicorn==21.2.0
 whitenoise==6.7.0
 
 # Autenticación y seguridad
+djangorestframework-simplejwt==5.3.1
 pyJWT==2.9.0
 
 # API Response formatting
