@@ -8,7 +8,7 @@ done
 echo "✅ Base de datos disponible"
 
 echo "🔄 Ejecutando migraciones..."
-python manage.py makemigrations notifications
+python manage.py makemigrations
 python manage.py migrate
 python manage.py migrate django_celery_beat
 

@@ -10,7 +10,6 @@ environ.Env.read_env(env_file)
 DEBUG = False
 
 # Configuración de logging para QA
-LOGGING['loggers']['apps.notifications']['level'] = 'WARNING'
 LOGGING['loggers']['celery']['level'] = 'ERROR'
 LOGGING['root']['level'] = 'WARNING'
 

@@ -14,15 +14,15 @@ logger = logging.getLogger(__name__)
 
 def generate_service_token(secret):
     """
-    Genera un token JWT para que el servicio de notificaciones 
+    Genera un token JWT para que el servicio 
     se comunique con el monolito
     """
     payload = {
-        'iss': 'notifications_service',
+        'iss': 'microservice',
         'aud': 'monolith',
         'iat': datetime.utcnow(),
         'type': 'service',
-        'service_id': 'notifications'
+        'service_id': 'microservice'
     }
 
     token = jwt.encode(
